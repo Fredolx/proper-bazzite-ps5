@@ -1,0 +1,61 @@
+name: Build Bazzite PS5 Image
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'system_files/**'
+      - '.github/workflows/image-build.yml'
+  workflow_run:
+    workflows: ["Build Kernel RPMs"]
+    types:
+      - completed
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: proper-bazzite-ps5
+  KERNEL_IMAGE_NAME: proper-bazzite-ps5-kernel
+  REGISTRY: ghcr.io
+
+jobs:
+  build-image:
+    name: Build & Push Container Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and Push OCI Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          build-args: |
+            KERNEL_IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.KERNEL_IMAGE_NAME }}:latest
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+FW=nxp/pcieuartiw620_combo_v1.bin
+if [ -f /run/ostree-booted ]; then
+    DST_DIR=/etc/firmware
+    echo "$DST_DIR" > /sys/module/firmware_class/parameters/path 2>/dev/null || true
+else
+    DST_DIR=/lib/firmware
+fi
+DST=$DST_DIR/$FW
+[ -e "$DST" ] || for d in /efi /boot/efi /boot; do
+    if [ -f "$d/lib/$FW" ]; then
+        install -Dm644 "$d/lib/$FW" "$DST"
+        break
+    fi
+done
+modprobe -r moal mlan 2>/dev/null || true
+modprobe moal 2>/dev/null || true

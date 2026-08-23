@@ -1,0 +1,73 @@
+name: Build Kernel RPMs
+
+on:
+  push:
+    paths:
+      - 'external/**'
+      - 'packaging/**'
+      - '.github/workflows/kernel-build.yml'
+  workflow_dispatch:
+
+env:
+  KERNEL_IMAGE_NAME: proper-bazzite-ps5-kernel
+  REGISTRY: ghcr.io
+
+jobs:
+  build-kernel:
+    name: Build Kernel & Wi-Fi RPMs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc kmod ccache bison flex libelf-dev libssl-dev \
+            dwarves rpm libncurses-dev zstd cpio gawk rsync python3 pkg-config \
+            libdw-dev zlib1g-dev
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-kernel-ccache-${{ hashFiles('external/**', 'packaging/**') }}
+          restore-keys: |
+            ${{ runner.os }}-kernel-ccache-
+
+      - name: Build Kernel Packages
+        run: |
+          export PATH="/usr/lib/ccache:$PATH"
+          ./packaging/build-kernel.sh
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Kernel Image
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.KERNEL_IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and Push Kernel OCI Package
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packaging/Dockerfile.kernel
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
