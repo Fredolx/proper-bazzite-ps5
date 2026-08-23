@@ -33,6 +33,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set lowercase repository owner
+        run: |
+          echo "REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -44,7 +48,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=sha
@@ -55,7 +59,7 @@ jobs:
           context: .
           file: ./Dockerfile
           build-args: |
-            KERNEL_IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.KERNEL_IMAGE_NAME }}:latest
+            KERNEL_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/${{ env.KERNEL_IMAGE_NAME }}:latest
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

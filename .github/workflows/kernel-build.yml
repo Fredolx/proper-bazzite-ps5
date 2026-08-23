@@ -26,6 +26,10 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set lowercase repository owner
+        run: |
+          echo "REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
@@ -58,7 +62,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.KERNEL_IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/${{ env.KERNEL_IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=sha
