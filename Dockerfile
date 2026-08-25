@@ -10,7 +10,7 @@ RUN rpm-ostree override replace /tmp/rpms/*.rpm && \
 
 COPY system_files/ /
 
-RUN systemctl --global enable plasma-krdp.service 2>/dev/null || true
+RUN systemctl --global enable app-org.kde.krdpserver.service 2>/dev/null || true
 
 RUN mkdir -p /var/roothome && \
     KVER=$(ls -1t /usr/lib/modules | head -n1) && \
