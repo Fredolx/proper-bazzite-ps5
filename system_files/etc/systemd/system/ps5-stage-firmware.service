@@ -1,0 +1,12 @@
+[Unit]
+Description=Stage PS5 NXP IW620 wifi firmware from EFI partition
+After=local-fs.target
+Before=systemd-modules-load.service network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ps5-stage-firmware
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target
