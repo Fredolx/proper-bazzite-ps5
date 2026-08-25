@@ -12,7 +12,8 @@ COPY system_files/ /
 
 RUN systemctl --global enable plasma-krdp.service 2>/dev/null || true
 
-RUN KVER=$(ls -1t /usr/lib/modules | head -n1) && \
+RUN mkdir -p /var/roothome && \
+    KVER=$(ls -1t /usr/lib/modules | head -n1) && \
     dracut --force --no-hostonly --kver "$KVER" "/usr/lib/modules/$KVER/initramfs.img" && \
     cp "/usr/lib/modules/$KVER/initramfs.img" "/boot/initramfs-$KVER.img" 2>/dev/null || true
 
