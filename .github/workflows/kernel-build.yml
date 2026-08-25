@@ -30,6 +30,9 @@ jobs:
         run: |
           echo "REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
