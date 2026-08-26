@@ -1,0 +1,13 @@
+[Unit]
+Description=PS5 fan control
+After=dev-icc.device
+ConditionPathExists=/dev/icc
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ps5_control --fan on
+ExecStop=/usr/bin/ps5_control --fan off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

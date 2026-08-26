@@ -1,0 +1,12 @@
+[Unit]
+Description=PS5 AMDGPU HDMI display reprobe
+After=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/sleep 3
+ExecStart=/usr/bin/ps5-amdgpu-reprobe
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

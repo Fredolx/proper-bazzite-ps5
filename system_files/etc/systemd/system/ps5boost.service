@@ -1,0 +1,13 @@
+[Unit]
+Description=PS5 CPU and GPU boost
+After=dev-mp1.device
+ConditionPathExists=/dev/mp1
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ps5_control --boost on
+ExecStop=/usr/bin/ps5_control --boost off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

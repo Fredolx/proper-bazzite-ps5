@@ -55,6 +55,11 @@ mkdir -p "$EXTRA_DIR"
 install -m 0644 "$MWIFIEX_SRC/mlan.ko" "$EXTRA_DIR/mlan.ko"
 install -m 0644 "$MWIFIEX_SRC/moal.ko" "$EXTRA_DIR/moal.ko"
 
+TOOLS_DIR="$SCRIPT_DIR/external/ps5-linux-tools"
+make -C "$TOOLS_DIR" ps5_control
+mkdir -p "$STAGING_DIR/usr/bin"
+install -m 0755 "$TOOLS_DIR/ps5_control" "$STAGING_DIR/usr/bin/ps5_control"
+
 depmod -b "$STAGING_DIR/usr" "$KVER"
 
 rpmbuild -bb \

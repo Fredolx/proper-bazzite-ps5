@@ -17,7 +17,7 @@ COPY packaging/decompress-gpu-firmware.sh \
 RUN /tmp/decompress-gpu-firmware.sh && \
     /tmp/fix-gamescope-desktop-alias.sh && \
     systemctl --global enable app-org.kde.krdpserver.service 2>/dev/null || true && \
-    systemctl enable ps5-stage-firmware.service ps5-bt-quiet.service 2>/dev/null || true && \
+    systemctl enable ps5-stage-firmware.service ps5-bt-quiet.service ps5fan.service ps5boost.service ps5-amdgpu-reprobe.service 2>/dev/null || true && \
     /tmp/build-initramfs.sh && \
     rm -rf /tmp/*
 

@@ -1,1 +1,1 @@
-SUBSYSTEM=="drm", ACTION=="add", KERNEL=="card[0-9]*", RUN+="/usr/bin/ps5-amdgpu-reprobe"
+SUBSYSTEM=="drm", ACTION=="add", KERNEL=="card[0-9]*", TAG+="systemd", ENV{SYSTEMD_WANTS}="ps5-amdgpu-reprobe.service"

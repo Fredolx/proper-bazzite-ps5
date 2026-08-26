@@ -1,7 +1,4 @@
 #!/bin/sh
-(
-    sleep 3
-    for c in /sys/class/drm/card*-*/status; do
-        [ -w "$c" ] && echo detect > "$c"
-    done
-) &
+for c in /sys/class/drm/card*-*/status; do
+    [ -w "$c" ] && echo detect > "$c"
+done

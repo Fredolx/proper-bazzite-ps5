@@ -4,3 +4,6 @@
 [submodule "external/ps5-linux-mwifiex"]
 	path = external/ps5-linux-mwifiex
 	url = https://github.com/ps5-linux/ps5-linux-mwifiex.git
+[submodule "external/ps5-linux-tools"]
+	path = external/ps5-linux-tools
+	url = https://github.com/ps5-linux/ps5-linux-tools.git

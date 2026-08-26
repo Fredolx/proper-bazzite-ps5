@@ -28,6 +28,7 @@ cp -a %{stagedir}/. %{buildroot}/
 /boot/System.map-%{kver}
 /boot/config-%{kver}
 /usr/lib/modules/%{kver}
+/usr/bin/ps5_control
 
 %post
 depmod -a %{kver} || true
