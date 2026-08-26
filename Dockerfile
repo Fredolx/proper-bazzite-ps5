@@ -6,7 +6,8 @@ COPY --from=kernel /rpms/ /tmp/rpms/
 
 RUN rpm-ostree override replace /tmp/rpms/*.rpm && \
     rpm-ostree install krdp && \
-    rm -rf /tmp/rpms /etc/yum.repos.d/terra*.repo
+    rm -rf /tmp/rpms /etc/yum.repos.d/terra*.repo /etc/dnf/repos.override.d/* && \
+    cp -rf /usr/share/distribution-gpg-keys/*/* /etc/pki/rpm-gpg/ 2>/dev/null || true
 
 COPY system_files/ /
 COPY packaging/decompress-gpu-firmware.sh \
