@@ -38,6 +38,10 @@ command -v getenforce >/dev/null 2>&1 && [ "$(getenforce 2>/dev/null)" = "Enforc
 }
 
 mkdir -p "$(dirname "$OUTPUT_FILE")"
+for loop in $(losetup -j "$OUTPUT_FILE" 2>/dev/null | cut -d: -f1); do
+    losetup -d "$loop" 2>/dev/null || true
+done
+rm -f "$OUTPUT_FILE"
 truncate -s 25G "$OUTPUT_FILE"
 
 echo "Building bootable disk image with bootc..."
@@ -48,7 +52,7 @@ podman run --rm --privileged \
     -v /var/lib/containers:/var/lib/containers \
     -v "$(dirname "$OUTPUT_FILE")":/output:z \
     "$IMAGE" \
-    bootc install to-disk --generic-image --via-loopback "/output/$(basename "$OUTPUT_FILE")" --filesystem btrfs
+    bootc install to-disk --generic-image --wipe --via-loopback "/output/$(basename "$OUTPUT_FILE")" --filesystem btrfs
 
 echo "Configuring PS5 bootloader files..."
 LOOPDEV=$(losetup -fP --show "$OUTPUT_FILE")
