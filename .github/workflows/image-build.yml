@@ -2,15 +2,15 @@ name: Build Bazzite PS5 Image
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: "0 6 * * *"
   push:
     branches:
       - main
     paths:
-      - 'Dockerfile'
-      - 'packaging/**'
-      - 'system_files/**'
-      - '.github/workflows/image-build.yml'
+      - "Dockerfile"
+      - "packaging/**"
+      - "system_files/**"
+      - ".github/workflows/image-build.yml"
   workflow_run:
     workflows: ["Build Kernel RPMs"]
     types:

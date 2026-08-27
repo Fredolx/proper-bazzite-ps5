@@ -18,3 +18,10 @@ for f in cyan_skillfish*.xz; do
         rm -f "$f"
     fi
 done
+
+for f in *.bin.xz *.bin; do
+    case "$f" in
+        cyan_skillfish*) continue ;;
+        *) rm -f "$f" ;;
+    esac
+done

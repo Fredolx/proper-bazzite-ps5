@@ -2,3 +2,4 @@ build/
 dist-rpms/
 .cache/
 *.rpm
+output
