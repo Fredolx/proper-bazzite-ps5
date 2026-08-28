@@ -54,15 +54,47 @@ podman run --rm --privileged \
     "$IMAGE" \
     bootc install to-disk --generic-image --wipe --via-loopback "/output/$(basename "$OUTPUT_FILE")" --filesystem btrfs
 
-echo "Configuring PS5 bootloader files..."
+echo "Configuring PS5 bootloader files (bzImage, initramfs, vram.txt, cmdline.txt, firmware)..."
 LOOPDEV=$(losetup -fP --show "$OUTPUT_FILE")
 udevadm settle 2>/dev/null || sleep 2
 
 MOUNT_BOOT="$(mktemp -d)"
-mount "${LOOPDEV}p2" "$MOUNT_BOOT" 2>/dev/null || mount "${LOOPDEV}p1" "$MOUNT_BOOT"
+mount "${LOOPDEV}p2" "$MOUNT_BOOT"
 
-[ -f "$MOUNT_BOOT/vmlinuz" ] && [ ! -f "$MOUNT_BOOT/bzImage" ] && cp "$MOUNT_BOOT/vmlinuz" "$MOUNT_BOOT/bzImage"
-[ ! -f "$MOUNT_BOOT/cmdline.txt" ] && echo "rw quiet console=tty0" > "$MOUNT_BOOT/cmdline.txt"
+CID="$(podman create "$IMAGE")"
+podman cp "$CID:/usr/lib/modules" "$MOUNT_BOOT/.temp_k"
+K_DIR="$(ls -1td "$MOUNT_BOOT"/.temp_k/* | head -n1)"
+cp "$K_DIR/vmlinuz" "$MOUNT_BOOT/bzImage"
+cp "$K_DIR/initramfs.img" "$MOUNT_BOOT/initramfs.img"
+cp "$K_DIR/initramfs.img" "$MOUNT_BOOT/initrd.img"
+rm -rf "$MOUNT_BOOT/.temp_k"
+
+mkdir -p "$MOUNT_BOOT/lib/nxp"
+podman cp "$CID:/usr/lib/firmware/nxp" "$MOUNT_BOOT/lib/.temp_nxp" 2>/dev/null || true
+if [ -d "$MOUNT_BOOT/lib/.temp_nxp" ]; then
+    for fw in "$MOUNT_BOOT/lib/.temp_nxp"/*iw620*; do
+        [ -e "$fw" ] || continue
+        if [[ "$fw" == *.xz ]]; then
+            xz -dc "$fw" > "$MOUNT_BOOT/lib/nxp/$(basename "${fw%.xz}")"
+        else
+            cp "$fw" "$MOUNT_BOOT/lib/nxp/"
+        fi
+    done
+    rm -rf "$MOUNT_BOOT/lib/.temp_nxp"
+fi
+podman rm "$CID" >/dev/null 2>&1 || true
+
+echo "0x20000000" > "$MOUNT_BOOT/vram.txt"
+echo "root=LABEL=root rw rootwait console=ttyTitania0 console=tty0 video=DP-1:1920x1080@60 mitigations=off idle=halt preempt=full selinux=0" > "$MOUNT_BOOT/cmdline.txt"
+
+cat <<'KEXEC' > "$MOUNT_BOOT/kexec.sh"
+#!/bin/sh
+set -e
+BOOT=/boot/efi
+kexec -l "$BOOT/bzImage" --initrd="$BOOT/initrd.img" --command-line="$(cat $BOOT/cmdline.txt)"
+kexec -e
+KEXEC
+chmod +x "$MOUNT_BOOT/kexec.sh"
 
 sync
 umount "$MOUNT_BOOT"
@@ -70,5 +102,6 @@ rmdir "$MOUNT_BOOT"
 losetup -d "$LOOPDEV"
 
 echo "=========================================================="
-echo "Done. Output: $OUTPUT_FILE"
+echo "Done! Disk image: $OUTPUT_FILE"
+echo "Flash with: sudo dd if=$OUTPUT_FILE of=/dev/sdX bs=4M status=progress conv=fsync"
 echo "=========================================================="

@@ -1,0 +1,14 @@
+[Unit]
+Description=PS5: Synchronize kernel, initramfs, and firmware to EFI partition
+DefaultDependencies=no
+After=local-fs.target boot-efi.mount
+Before=umount.target shutdown.target reboot.target poweroff.target
+Conflicts=umount.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ps5-sync-boot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target shutdown.target reboot.target poweroff.target

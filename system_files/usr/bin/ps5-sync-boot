@@ -1,0 +1,60 @@
+#!/bin/sh
+set -eu
+
+EFI_DIR=""
+for d in /boot/efi /efi /boot; do
+    if [ -d "$d" ] && [ -w "$d" ]; then
+        EFI_DIR="$d"
+        break
+    fi
+done
+
+[ -n "$EFI_DIR" ] || exit 0
+
+KVER=$(ls -1t /usr/lib/modules 2>/dev/null | head -n1 || true)
+if [ -n "$KVER" ]; then
+    SRC_VMLINUZ="/usr/lib/modules/$KVER/vmlinuz"
+    SRC_INITRD="/usr/lib/modules/$KVER/initramfs.img"
+    
+    if [ -f "$SRC_VMLINUZ" ]; then
+        if ! cmp -s "$SRC_VMLINUZ" "$EFI_DIR/bzImage" 2>/dev/null; then
+            cp -f "$SRC_VMLINUZ" "$EFI_DIR/bzImage"
+        fi
+    fi
+    
+    if [ -f "$SRC_INITRD" ]; then
+        if ! cmp -s "$SRC_INITRD" "$EFI_DIR/initramfs.img" 2>/dev/null; then
+            cp -f "$SRC_INITRD" "$EFI_DIR/initramfs.img"
+            cp -f "$SRC_INITRD" "$EFI_DIR/initrd.img"
+        fi
+    fi
+fi
+
+mkdir -p "$EFI_DIR/lib/nxp"
+if [ ! -f "$EFI_DIR/lib/nxp/pcieuartiw620_combo_v1.bin" ]; then
+    for fw in /usr/lib/firmware/nxp/*iw620* /lib/firmware/nxp/*iw620*; do
+        [ -e "$fw" ] || continue
+        if [ "${fw##*.}" = "xz" ]; then
+            xz -dc "$fw" > "$EFI_DIR/lib/nxp/pcieuartiw620_combo_v1.bin"
+        else
+            cp -f "$fw" "$EFI_DIR/lib/nxp/pcieuartiw620_combo_v1.bin"
+        fi
+        break
+    done
+fi
+
+[ -f "$EFI_DIR/vram.txt" ] || echo "0x20000000" > "$EFI_DIR/vram.txt"
+[ -f "$EFI_DIR/cmdline.txt" ] || echo "root=LABEL=root rw rootwait console=ttyTitania0 console=tty0 video=DP-1:1920x1080@60 mitigations=off idle=halt preempt=full selinux=0" > "$EFI_DIR/cmdline.txt"
+
+if [ ! -f "$EFI_DIR/kexec.sh" ]; then
+    cat <<'KEXEC' > "$EFI_DIR/kexec.sh"
+#!/bin/sh
+set -e
+BOOT=/boot/efi
+kexec -l "$BOOT/bzImage" --initrd="$BOOT/initrd.img" --command-line="$(cat $BOOT/cmdline.txt)"
+kexec -e
+KEXEC
+    chmod +x "$EFI_DIR/kexec.sh"
+fi
+
+sync
